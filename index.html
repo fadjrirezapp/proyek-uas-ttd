@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cilegon Bersih Bersama Untirta</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600&display=swap"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="amb" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <nav>
+      <div class="logo">
+        <svg class="lg" viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M4 20C4 10 10 4 20 4c0 10-6 16-16 16Z"
+            style="fill: var(--y); stroke: var(--ink); stroke-width: 2"
+          />
+          <path
+            d="M4 20 14 10"
+            style="stroke: var(--ink); stroke-width: 2; fill: none"
+          /></svg
+        >Cilegon Bersih Bersama<b>Untirta</b>
+      </div>
+      <span id="nv"></span>
+    </nav>
+    <div class="stripe"></div>
+    <div class="wrap">
+      <section id="v-beranda" class="sec">
+        <div class="hero">
+          <div>
+            <h1>Buang sampah, <mark>dapat hadiah.</mark></h1>
+            <p>
+              Setor sampah di Perumahan Arga atau Kampus Fakultas Teknik Untirta, dan dapatkan hadiah menarik!
+            </p>
+          </div>
+          <div class="doors">
+            <button class="door y" id="goUser">
+              <h3>Masuk sebagai warga</h3>
+              <span>Tanpa username dan sandi. Langsung ke dashboard.</span>
+            </button>
+            <button class="door" id="goAdm">
+              <h3>Masuk sebagai admin</h3>
+              <span>Kelola dan analisis data setoran.</span>
+            </button>
+          </div>
+        </div>
+        <div class="scene">
+          <svg
+            viewBox="0 0 640 170"
+            role="img"
+            aria-label="Taman dengan pohon dan tong sampah. Ketuk pohon atau tong untuk berinteraksi."
+          >
+            <rect width="640" height="170" style="fill: var(--sky)" />
+            <g class="cl">
+              <ellipse
+                cx="260"
+                cy="34"
+                rx="28"
+                ry="10"
+                style="fill: var(--cloud)"
+              />
+              <ellipse
+                cx="278"
+                cy="28"
+                rx="18"
+                ry="9"
+                style="fill: var(--cloud)"
+              />
+            </g>
+            <g class="cl b">
+              <ellipse
+                cx="420"
+                cy="52"
+                rx="24"
+                ry="8"
+                style="fill: var(--cloud)"
+              />
+              <ellipse
+                cx="436"
+                cy="47"
+                rx="15"
+                ry="8"
+                style="fill: var(--cloud)"
+              />
+            </g>
+            <g
+              id="sun"
+              class="sun"
+              role="button"
+              tabindex="0"
+              aria-label="Matahari. Ketuk untuk menyapa"
+            >
+              <g class="rays">
+                <path
+                  d="M70 8v8M70 60v8M42 38h8M90 38h8M50 18l5 5M90 58l-5-5M90 18l-5 5M50 58l5-5"
+                  style="
+                    stroke: var(--sun);
+                    stroke-width: 3;
+                    stroke-linecap: round;
+                  "
+                />
+              </g>
+              <circle cx="70" cy="38" r="20" style="fill: var(--sun)" />
+            </g>
+            <path
+              d="M0 118Q110 62 250 108T520 98T640 112V170H0Z"
+              style="fill: var(--g1)"
+            />
+            <path
+              d="M0 140Q150 96 300 134T640 128V170H0Z"
+              style="fill: var(--g2)"
+            />
+            <path
+              d="M0 158Q200 132 400 156T640 150V170H0Z"
+              style="fill: var(--g3)"
+            />
+            <g class="tree">
+              <rect
+                x="148"
+                y="92"
+                width="9"
+                height="46"
+                style="fill: var(--wood)"
+              />
+              <circle cx="152" cy="80" r="26" style="fill: var(--g3)" />
+              <circle cx="134" cy="96" r="15" style="fill: var(--g3)" />
+              <circle cx="171" cy="96" r="15" style="fill: var(--g3)" />
+            </g>
+            <g class="tree">
+              <rect
+                x="268"
+                y="108"
+                width="7"
+                height="32"
+                style="fill: var(--wood)"
+              />
+              <circle cx="271" cy="98" r="19" style="fill: var(--g3)" />
+            </g>
+            <g class="fl" style="--c: var(--pink)">
+              <path
+                d="M556 158V142"
+                style="stroke: var(--b); stroke-width: 2.5"
+              />
+              <circle cx="556" cy="138" r="6" style="fill: var(--c)" />
+              <circle cx="556" cy="138" r="2.5" style="fill: var(--yel)" />
+            </g>
+            <g class="fl" style="--c: var(--orange)">
+              <path
+                d="M578 158V142"
+                style="stroke: var(--b); stroke-width: 2.5"
+              />
+              <circle cx="578" cy="138" r="6" style="fill: var(--c)" />
+              <circle cx="578" cy="138" r="2.5" style="fill: var(--yel)" />
+            </g>
+            <g class="fl" style="--c: var(--yel)">
+              <path
+                d="M600 158V142"
+                style="stroke: var(--b); stroke-width: 2.5"
+              />
+              <circle cx="600" cy="138" r="6" style="fill: var(--c)" />
+              <circle cx="600" cy="138" r="2.5" style="fill: var(--yel)" />
+            </g>
+            <g class="fl" style="--c: var(--blue)">
+              <path
+                d="M380 158V142"
+                style="stroke: var(--b); stroke-width: 2.5"
+              />
+              <circle cx="380" cy="138" r="6" style="fill: var(--c)" />
+              <circle cx="380" cy="138" r="2.5" style="fill: var(--yel)" />
+            </g>
+            <g class="fl" style="--c: var(--pink)">
+              <path
+                d="M402 158V142"
+                style="stroke: var(--b); stroke-width: 2.5"
+              />
+              <circle cx="402" cy="138" r="6" style="fill: var(--c)" />
+              <circle cx="402" cy="138" r="2.5" style="fill: var(--yel)" />
+            </g>
+            <circle
+              id="ball"
+              cx="500"
+              cy="64"
+              r="7"
+              style="
+                fill: var(--card);
+                stroke: var(--ink);
+                stroke-width: 2;
+                opacity: 0;
+              "
+            />
+            <g
+              id="bin"
+              tabindex="0"
+              role="button"
+              aria-label="Tong sampah. Ketuk untuk membuang sampah"
+            >
+              <path
+                d="M478 118H522L518 158H482Z"
+                style="fill: var(--b); stroke: var(--ink); stroke-width: 2"
+              />
+              <path
+                d="M492 126V150M500 126V150M508 126V150"
+                style="stroke: var(--ink); stroke-width: 2; opacity: 0.35"
+              />
+              <g id="lid">
+                <rect
+                  x="473"
+                  y="109"
+                  width="54"
+                  height="9"
+                  rx="3"
+                  style="fill: var(--yi); stroke: var(--ink); stroke-width: 2"
+                />
+                <rect
+                  x="491"
+                  y="103"
+                  width="18"
+                  height="6"
+                  rx="3"
+                  style="fill: var(--yi); stroke: var(--ink); stroke-width: 2"
+                />
+              </g>
+            </g>
+          </svg>
+        </div>
+        <div id="adm">
+          <div class="lbl">Login admin</div>
+          <input
+            type="text"
+            id="au"
+            placeholder="Username"
+            autocomplete="off"
+          /><input type="password" id="ap" placeholder="Sandi" />
+          <div class="err" id="ae"></div>
+          <button class="pri" id="aok">Masuk</button>
+        </div>
+      </section>
+
+      <section id="v-dashboard" class="sec">
+        <h2 class="page-title">Tier list pembuang sampah</h2>
+        <div class="chips" id="chips"></div>
+        <div class="prize">
+          Peringkat 1 akan mendapatkan hadiah berupa saldo DANA. Peringkat dihitung dari jumlah
+          setoran yang tercatat.
+        </div>
+        <div class="stats" id="stats"></div>
+        <div id="dash"></div>
+      </section>
+
+      <section id="v-setor" class="sec form-sec">
+        <h2 class="page-title">Setor sampah</h2>
+        <form id="fm" novalidate>
+          <label for="nm">Nama</label
+          ><input
+            type="text"
+            id="nm"
+            maxlength="40"
+            placeholder="Budi Santoso"
+            autocomplete="name"
+          />
+          <label for="hp">No HP</label
+          ><input
+            type="tel"
+            id="hp"
+            maxlength="16"
+            placeholder="081234567890"
+            inputmode="numeric"
+          />
+          <div class="lbl">Tempat pembuangan</div>
+          <div class="locs" id="lc"></div>
+          <div class="lbl">Foto bukti (wajib)</div>
+          <label class="dz" id="dz" style="margin: 0"
+            ><input type="file" id="foto" accept="image/*" /><span id="dzt"
+              >Ketuk untuk pilih atau ambil foto
+              <br />
+              (Pastikan ketika pengambilan foto tong sampah dan juga barcode
+              terlihat jelas)</span
+            ><img id="prev" hidden alt="Pratinjau foto bukti"
+          /></label>
+          <div class="err" id="fe"></div>
+          <button
+            class="pri"
+            id="submitSetoran"
+            type="submit"
+            style="width: 100%; padding: 14px"
+            disabled
+          >
+            Kirim setoran
+          </button>
+        </form>
+      </section>
+
+      <section id="v-admin" class="sec">
+        <h2 class="page-title">Panel admin</h2>
+        <div class="stats" id="astats"></div>
+        <div id="alocs" style="margin-bottom: 20px"></div>
+        <div
+          style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px"
+        >
+          <button id="seed">Isi data contoh</button
+          ><button id="csv">Unduh CSV</button>
+        </div>
+        <div class="tw">
+          <table>
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Nama</th>
+                <th>No HP</th>
+                <th>Lokasi</th>
+                <th>Foto</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tb"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+    <div class="lb" id="lb"><img id="lbi" alt="Foto bukti" /></div>
+    <div id="toast"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
