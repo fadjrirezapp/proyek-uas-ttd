@@ -49,7 +49,7 @@ function setRows(a) {
   rows = a.slice().sort((x, y) => y.t - x.t);
   render();
 }
-const SUPABASE_URL = "https://pconlqyyrjsazxgyxknq.supabase.co/rest/v1/";
+const SUPABASE_URL "https://pconlqyyrjsazxgyxknq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lw99KGZbsiVnm41S5aHm3Q_6NwFTkBY";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
