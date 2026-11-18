@@ -292,7 +292,7 @@ $("#fm").onsubmit = async (e) => {
 function admin() {
   const R = rank(rows);
   $("#astats").innerHTML =
-    `<div class="stat"><b data-n="${rows.length}">${rp(rows.length)}</b><span>total setoran</span></div><div class="stat"><b data-n="${R.length}">${rp(R.length)}</b><span>warga unik</span></div><div class="stat"><b>${R[0] ? esc(R[0].nama.split(" ")[0]) : "-"}</b><span>kandidat saldo</span></div>`;
+    `<div class="stat"><b data-n="${rows.length}">${rp(rows.length)}</b><span>total setoran</span></div><div class="stat"><b data-n="${R.length}">${rp(R.length)}</b><span>warga aktif</span></div><div class="stat"><b>${R[0] ? esc(R[0].nama.split(" ")[0]) : "-"}</b><span>kandidat saldo</span></div>`;
   const c = LOCS.map((l) => rows.filter((r) => r.lokasi === l).length),
     mx = Math.max(1, ...c);
   $("#alocs").innerHTML = LOCS.map(
