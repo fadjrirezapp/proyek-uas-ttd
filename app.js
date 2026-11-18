@@ -162,7 +162,7 @@ function dash() {
   const L = filt === "Semua" ? rows : rows.filter((r) => r.lokasi === filt),
     R = rank(L);
   $("#stats").innerHTML =
-    `<div class="stat"><b data-n="${L.length}">${rp(L.length)}</b><span>setoran</span></div><div class="stat"><b data-n="${R.length}">${rp(R.length)}</b><span>warga aktif</span></div><div class="stat"><b>${R[0] ? esc(R[0].nama.split(" ")[0]) : "-"}</b><span>di puncak</span></div>`;
+    `<div class="stat"><b data-n="${L.length}">${rp(L.length)}</b><span>setoran</span></div><div class="stat"><b data-n="${R.length}">${rp(R.length)}</b><span>warga aktif</span></div><div class="stat"><b>${R[0] ? esc(R[0].nama.split(" ")[0]) : "-"}</b><span>kandidat pemenang</span></div>`;
   if (!R.length) {
     $("#dash").innerHTML =
       '<div class="empty"><h3>Belum ada setoran di sini</h3><p>Jadi yang pertama naik ke puncak tier list.</p><button class="pri" id="e1">Setor sampah</button></div>';
