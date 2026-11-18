@@ -2,26 +2,26 @@
 :root {
   --bg: #f6f0dd;
   --card: #fffbee;
-  --ink: #2e3b30;
-  --mut: #596a5b;
-  --line: #d7ddcb;
-  --y: #bfd0a8;
-  --yi: #395640;
-  --b: #63856a;
-  --ok: #5b8c63;
-  --bad: #a96d5b;
-  --g1: #d9e5d0;
-  --g2: #bfd3b7;
-  --g3: #91b18e;
-  --sun: #e8d39b;
-  --wood: #8a7255;
-  --sky: #e0e9df;
-  --cloud: #fbfbf4;
-  --skyink: #33463a;
-  --blue: #8da995;
-  --orange: #d5a078;
-  --pink: #d5a9a0;
-  --yel: #e6d39a;
+  --ink: #21402f;
+  --mut: #617a68;
+  --line: #dfd9bc;
+  --y: #9acd8e;
+  --yi: #2f6b47;
+  --b: #3f8f5b;
+  --ok: #2e8b57;
+  --bad: #b5503c;
+  --g1: #cfe6c2;
+  --g2: #a9d39d;
+  --g3: #78b785;
+  --sun: #f3d98a;
+  --wood: #8a6a4a;
+  --sky: #bfe6f5;
+  --cloud: #ffffff;
+  --skyink: #12384f;
+  --blue: #3b82c4;
+  --orange: #f29b4b;
+  --pink: #f4a6c0;
+  --yel: #f6d365;
   --fd: "Bricolage Grotesque", system-ui, sans-serif;
   --fb: Figtree, system-ui, sans-serif;
   box-sizing: border-box;
@@ -32,51 +32,51 @@
   :root:not([data-theme="light"]) {
     --bg: #11251a;
     --card: #1a3325;
-    --ink: #e7eee5;
-    --mut: #a9b7aa;
-    --line: #405344;
-    --y: #9bb38c;
-    --yi: #1c2f22;
-    --b: #91b49a;
-    --ok: #63b58a;
-    --bad: #df927c;
-    --g1: #273d2c;
-    --g2: #35503a;
-    --g3: #496c4d;
-    --sun: #cdb975;
+    --ink: #eaf4e4;
+    --mut: #a5c0ae;
+    --line: #2f4a39;
+    --y: #7fc48a;
+    --yi: #11251a;
+    --b: #8fd6a0;
+    --ok: #3dd6a3;
+    --bad: #ff9c86;
+    --g1: #1e3b2a;
+    --g2: #25503a;
+    --g3: #2f6b47;
+    --sun: #c9b25e;
     --wood: #b08f6a;
-    --sky: #2a4339;
-    --cloud: #435c4b;
-    --skyink: #deeadf;
-    --blue: #8eaf9a;
-    --orange: #d19b75;
-    --pink: #d0a099;
-    --yel: #d8c384;
+    --sky: #1b3f57;
+    --cloud: #3a5f78;
+    --skyink: #d6eefb;
+    --blue: #6fb1f2;
+    --orange: #f6a860;
+    --pink: #e79ab5;
+    --yel: #e9c85a;
   }
 }
 :root[data-theme="dark"] {
   --bg: #11251a;
   --card: #1a3325;
-  --ink: #e7eee5;
-  --mut: #a9b7aa;
-  --line: #405344;
-  --y: #9bb38c;
-  --yi: #1c2f22;
-  --b: #91b49a;
-  --ok: #63b58a;
-  --bad: #df927c;
-  --g1: #273d2c;
-  --g2: #35503a;
-  --g3: #496c4d;
-  --sun: #cdb975;
+  --ink: #eaf4e4;
+  --mut: #a5c0ae;
+  --line: #2f4a39;
+  --y: #7fc48a;
+  --yi: #11251a;
+  --b: #8fd6a0;
+  --ok: #3dd6a3;
+  --bad: #ff9c86;
+  --g1: #1e3b2a;
+  --g2: #25503a;
+  --g3: #2f6b47;
+  --sun: #c9b25e;
   --wood: #b08f6a;
-  --sky: #2a4339;
-  --cloud: #435c4b;
-  --skyink: #deeadf;
-  --blue: #8eaf9a;
-  --orange: #d19b75;
-  --pink: #d0a099;
-  --yel: #d8c384;
+  --sky: #1b3f57;
+  --cloud: #3a5f78;
+  --skyink: #d6eefb;
+  --blue: #6fb1f2;
+  --orange: #f6a860;
+  --pink: #e79ab5;
+  --yel: #e9c85a;
 }
 * {
   box-sizing: border-box;
@@ -140,7 +140,7 @@ a:focus-visible {
 }
 .pri {
   background: var(--y);
-  color: #24372c;
+  color: #101b3d;
   border-color: var(--ink);
 }
 input[type="text"],
@@ -181,7 +181,7 @@ nav {
 }
 .logo b {
   background: var(--y);
-  color: #24372c;
+  color: #101b3d;
   padding: 0 6px;
   border-radius: 6px;
 }
@@ -235,7 +235,7 @@ nav button.on {
 }
 .door.y {
   background: var(--y);
-  color: #24372c;
+  color: #101b3d;
 }
 .door h3 {
   font-size: 24px;
@@ -361,7 +361,7 @@ nav button.on {
 }
 .pi.f .blk {
   background: var(--y);
-  color: #24372c;
+  color: #101b3d;
 }
 .tp {
   height: 34px;
@@ -403,7 +403,7 @@ nav button.on {
 }
 .tg.t3 {
   background: var(--y);
-  color: #24372c;
+  color: #101b3d;
 }
 .tg.t2 {
   background: var(--line);
@@ -435,7 +435,7 @@ form label,
 }
 .loc.on {
   background: var(--y);
-  color: #24372c;
+  color: #101b3d;
 }
 .dz {
   display: block;
@@ -488,7 +488,7 @@ td img {
 .lb {
   position: absolute;
   inset: 0;
-  background: rgba(24, 34, 27, 0.85);
+  background: rgba(10, 15, 40, 0.85);
   display: none;
   align-items: center;
   justify-content: center;
@@ -528,25 +528,6 @@ td img {
   display: block;
 }
 @media (max-width: 700px) {
-  body {
-    isolation: isolate;
-    background-image: none;
-  }
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background-image:
-      linear-gradient(
-        color-mix(in srgb, var(--bg) 72%, transparent),
-        color-mix(in srgb, var(--bg) 78%, transparent)
-      ),
-      url("https://tekniksipil.untirta.ac.id/wp-content/uploads/2025/07/WhatsApp-Image-2025-07-24-at-21.07.21-1024x768.webp");
-    background-position: center;
-    background-size: cover;
-    pointer-events: none;
-  }
   nav {
     gap: 4px;
     padding: 12px 16px;
@@ -784,7 +765,7 @@ nav,
 }
 .prize {
   background: var(--yel);
-  color: #3d3926;
+  color: #2b2a10;
 }
 .stat {
   border-radius: 0 12px 12px 0;
@@ -804,15 +785,15 @@ nav,
 }
 .pi.r0 .blk {
   background: var(--yel);
-  color: #3d3926;
+  color: #2b2a10;
 }
 .pi.r1 .blk {
   background: var(--blue);
-  color: #253931;
+  color: #0b1f33;
 }
 .pi.r2 .blk {
   background: var(--orange);
-  color: #49372c;
+  color: #2b1606;
 }
 .tp svg {
   transform-origin: 50% 100%;
@@ -825,7 +806,7 @@ nav,
 }
 .tg.t3 {
   background: var(--yel);
-  color: #3d3926;
+  color: #2b2a10;
 }
 .tg.t2 {
   background: var(--sky);
@@ -833,7 +814,7 @@ nav,
 }
 .tg.t1 {
   background: var(--pink);
-  color: #483735;
+  color: #4a1b2c;
 }
 .bar i.t3 {
   background: var(--yel);
@@ -853,12 +834,12 @@ nav,
 .chips [data-l="Perumahan Arga"].on,
 .loc[data-l="Perumahan Arga"].on {
   background: var(--blue);
-  color: #253931;
+  color: #0b1f33;
 }
 .chips [data-l="Kampus Untirta"].on,
 .loc[data-l="Kampus Untirta"].on {
   background: var(--orange);
-  color: #49372c;
+  color: #2b1606;
 }
 .loc::before {
   content: "";
@@ -880,11 +861,11 @@ nav,
 }
 .pill.ag {
   background: var(--blue);
-  color: #253931;
+  color: #0b1f33;
 }
 .pill.dk {
   background: var(--orange);
-  color: #49372c;
+  color: #2b1606;
 }
 input:focus {
   border-color: var(--b);
