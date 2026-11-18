@@ -408,6 +408,20 @@ $("#csv").onclick = () => {
     setTimeout(() => l.remove(), 900);
   }
 document.addEventListener("pointerdown", (e) => {
+  if (!(e.target instanceof Element)) return;
+  const b = e.target.closest("button");
+  if (!b || b.disabled) return;
+  const r = b.getBoundingClientRect(),
+    s = document.createElement("span"),
+    size = Math.max(r.width, r.height) * 2;
+  s.className = "rp";
+  s.style.width = size + "px";
+  s.style.height = size + "px";
+  s.style.left = e.clientX - r.left - size / 2 + "px";
+  s.style.top = e.clientY - r.top - size / 2 + "px";
+  b.appendChild(s);
+  setTimeout(() => s.remove(), 600);
+});
 $("#aok").onclick = async () => {
   const { error } = await sb.auth.signInWithPassword({
     email: $("#au").value.trim(),
@@ -418,11 +432,6 @@ $("#aok").onclick = async () => {
   $("#ae").textContent = "";
   go("admin");
 };
-  b.appendChild(s);
-  setTimeout(() => s.remove(), 600);
-  if (b.matches(".pri,.door,.loc,.chips button"))
-    burst(e.clientX, e.clientY, 6);
-});
 const tips = [
   "Pisahkan sampah organik dan anorganik.",
   "Bilas botol plastik sebelum dibuang.",
