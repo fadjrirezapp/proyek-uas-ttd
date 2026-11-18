@@ -92,7 +92,7 @@ body {
       color-mix(in srgb, var(--bg) 72%, transparent),
       color-mix(in srgb, var(--bg) 78%, transparent)
     ),
-    url("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTySgNxMfACUqd7ycWFHu0nRin3QdHhYnOIxugxcpNmDFi24d324FVglNs&s=10");
+    url("https://tekniksipil.untirta.ac.id/wp-content/uploads/2025/07/WhatsApp-Image-2025-07-24-at-21.07.21-1024x768.webp");
   background-position: center;
   background-size: cover;
   background-attachment: fixed;
@@ -528,6 +528,25 @@ td img {
   display: block;
 }
 @media (max-width: 700px) {
+  body {
+    isolation: isolate;
+    background-image: none;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      linear-gradient(
+        color-mix(in srgb, var(--bg) 72%, transparent),
+        color-mix(in srgb, var(--bg) 78%, transparent)
+      ),
+      url("https://tekniksipil.untirta.ac.id/wp-content/uploads/2025/07/WhatsApp-Image-2025-07-24-at-21.07.21-1024x768.webp");
+    background-position: center;
+    background-size: cover;
+    pointer-events: none;
+  }
   nav {
     gap: 4px;
     padding: 12px 16px;
