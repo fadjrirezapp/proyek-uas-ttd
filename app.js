@@ -4,402 +4,274 @@ const esc = (s) =>
     /[&<>"]/g,
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c],
   );
-// ===== 1. DATA & PENYIMPANAN (nanti ganti ke Supabase di bagian ini) =====
-const LEGACY_LOC = "Damkar",
-  NEW_LOC = "Kampus Untirta",
-  LOCS = ["Perumahan Arga", NEW_LOC],
-  LS = "bp_rows";
-let rows = [],
-  role = null,
-  filt = "Semua",
-  col = null,
-  foto = "",
-  pick = "";
-try {
-  role = sessionStorage.getItem("bp_role");
-} catch (e) {}
-function setRole(r) {
-  role = r;
-  try {
-    r
-      ? sessionStorage.setItem("bp_role", r)
-      : sessionStorage.removeItem("bp_role");
-  } catch (e) {}
-}
-function lsGet() {
-  try {
-    return JSON.parse(localStorage.getItem(LS) || "[]");
-  } catch (e) {
-    return [];
-  }
-}
-function lsSet(a) {
-  try {
-    localStorage.setItem(LS, JSON.stringify(a));
-  } catch (e) {
-    toast("Penyimpanan penuh");
-  }
-}
-function migrateRows(a) {
-  return a.map((r) =>
-    r.lokasi === LEGACY_LOC ? { ...r, lokasi: NEW_LOC } : r,
-  );
-}
-function setRows(a) {
-  rows = a.slice().sort((x, y) => y.t - x.t);
-  render();
-}
+
+// ===== 1. KONFIGURASI & DATA (Supabase) =====
 const SUPABASE_URL = "https://pconlqyyrjsazxgyxknq.supabase.co";
 const SUPABASE_KEY = "sb_publishable_lw99KGZbsiVnm41S5aHm3Q_6NwFTkBY";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-async function muat() {
-  const { data, error } = await sb
-    .from("setoran")
-    .select("*")
-    .order("t", { ascending: false });
-  if (error) {
-    console.error(error);
-    toast("Gagal memuat: " + error.message);
-    return setRows([]); // tetap tampilkan halaman walau data gagal dimuat
-  }
-  setRows(data);
-}
-async function init() {
-  await muat();
-  sb.channel("setoran-live")
-    .on("postgres_changes", { event: "*", schema: "public", table: "setoran" }, muat)
-    .subscribe();
-}
-async function save(r) {
-  const { error } = await sb.from("setoran").insert(r);
-  if (error) throw error;
-  await muat();
-}
-async function del(id) {
-  const { error } = await sb.from("setoran").delete().eq("id", id);
-  if (error) return toast("Gagal menghapus. Login admin dulu.");
-  await muat();
-}
-const uid = () =>
-  Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const LOKASI = "Kampus Untirta"; // monitoring khusus Kampus Untirta
+let rows = [], // kejadian dari sensor (terbaru di atas)
+  logged = false, // true kalau admin sudah login
+  filt = "Semua", // Semua | Salah buang | Benar
+  firstLoad = true,
+  channel = null,
+  poll = null;
+const knownIds = new Set();
+
+const rp = (n) => n.toLocaleString("id-ID");
+const fmt = (t) =>
+  new Date(t).toLocaleString("id-ID", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
 function toast(m) {
   const t = $("#toast");
   t.textContent = m;
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 2400);
+  setTimeout(() => t.classList.remove("show"), 3200);
 }
-function go(h) {
-  location.hash = h;
+
+// ganti isi elemen hanya kalau berubah (supaya tidak berkedip saat polling)
+function setHTML(sel, html) {
+  const el = $(sel);
+  if (el._h === html) return false;
+  el._h = html;
+  el.innerHTML = html;
+  return true;
+}
+
+async function muat() {
+  if (!logged) return;
+  const { data, error } = await sb
+    .from("kejadian")
+    .select("*")
+    .order("waktu", { ascending: false })
+    .limit(500);
+  if (error) {
+    console.error(error);
+    toast("Gagal memuat: " + error.message);
+    return;
+  }
+  const baru = firstLoad ? [] : data.filter((r) => !knownIds.has(r.id));
+  data.forEach((r) => knownIds.add(r.id));
+  firstLoad = false;
+  rows = data;
+  const s = baru.find((r) => r.salah);
+  if (s)
+    toast(
+      `Salah buang di ${s.tong_id}: sampah ${s.kategori_terdeteksi} masuk tong ${s.kategori_tong}`,
+    );
+  $("#upd").textContent = "Diperbarui " + new Date().toLocaleTimeString("id-ID");
+  monitor();
+}
+
+function mulaiLive() {
+  stopLive();
+  channel = sb
+    .channel("kejadian-live")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "kejadian" },
+      muat,
+    )
+    .subscribe();
+  poll = setInterval(muat, 10000); // cadangan kalau realtime belum aktif
+}
+function stopLive() {
+  if (channel) {
+    sb.removeChannel(channel);
+    channel = null;
+  }
+  if (poll) {
+    clearInterval(poll);
+    poll = null;
+  }
+}
+
+async function del(id) {
+  const { error } = await sb.from("kejadian").delete().eq("id", id);
+  if (error) return toast("Gagal menghapus: " + error.message);
+  await muat();
+}
+
+// ===== 2. LOGIN ADMIN (Supabase Auth) =====
+$("#fl").onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = $("#aok");
+  btn.disabled = true;
+  const { error } = await sb.auth.signInWithPassword({
+    email: $("#au").value.trim(),
+    password: $("#ap").value,
+  });
+  btn.disabled = false;
+  if (error) return ($("#ae").textContent = "Email atau sandi salah.");
+  $("#ae").textContent = "";
+  $("#ap").value = "";
+};
+async function logout() {
+  await sb.auth.signOut();
+}
+function setSesi(session) {
+  const masuk = !!session;
+  if (masuk === logged) return;
+  logged = masuk;
+  if (masuk) {
+    firstLoad = true;
+    knownIds.clear();
+    mulaiLive();
+    setTimeout(muat, 0);
+  } else {
+    stopLive();
+    rows = [];
+  }
   render();
 }
-function rank(list) {
-  const m = {};
-  list.forEach((r) => {
-    (m[r.hp] = m[r.hp] || { nama: r.nama, n: 0 }).n++;
-  });
-  return Object.values(m).sort(
-    (a, b) => b.n - a.n || a.nama.localeCompare(b.nama),
-  );
-}
-const tier = (n) =>
-  n >= 10 ? ["Emas", "t3"] : n >= 5 ? ["Perak", "t2"] : ["Perunggu", "t1"];
-const rp = (n) => n.toLocaleString("id-ID");
+sb.auth.onAuthStateChange((_ev, session) => setSesi(session));
 
-// ===== 2. TAMPILAN: pindah halaman, dashboard, form, admin =====
+// ===== 3. TAMPILAN =====
 function render() {
-  let v = (location.hash || "#beranda").slice(1);
-  if (!["beranda", "dashboard", "setor", "admin"].includes(v)) v = "beranda";
-  if (v !== "beranda" && !role) v = "beranda";
-  if (v === "admin" && role !== "admin") v = role ? "dashboard" : "beranda";
+  const v = logged ? "admin" : "beranda";
   document
     .querySelectorAll(".sec")
     .forEach((s) => s.classList.toggle("show", s.id === "v-" + v));
   const nv = $("#nv");
   nv.innerHTML = "";
-  if (role) {
-    [
-      ["dashboard", "Dashboard"],
-      ["setor", "Setor sampah"],
-    ]
-      .concat(role === "admin" ? [["admin", "Admin"]] : [])
-      .forEach(([h, t]) => {
-        const b = document.createElement("button");
-        b.textContent = t;
-        b.className = v === h ? "on" : "";
-        b.onclick = () => go(h);
-        nv.appendChild(b);
-      });
+  if (logged) {
     const k = document.createElement("button");
     k.textContent = "Keluar";
-    k.onclick = () => {
-      setRole(null);
-      go("beranda");
-    };
+    k.onclick = logout;
     nv.appendChild(k);
+    monitor();
   }
-  if (v === "dashboard") dash();
-  if (v === "admin") admin();
-  if (v === "setor") lcs();
+  window.scrollTo(0, 0);
 }
 
-function dash() {
-  $("#chips").innerHTML = ["Semua", ...LOCS]
-    .map(
-      (l) =>
-        `<button class="${l === filt ? "on" : ""}" data-l="${l}">${l}</button>`,
-    )
-    .join("");
-  $("#chips")
-    .querySelectorAll("button")
-    .forEach(
-      (b) =>
-        (b.onclick = () => {
-          filt = b.dataset.l;
-          dash();
-        }),
-    );
-  const L = filt === "Semua" ? rows : rows.filter((r) => r.lokasi === filt),
-    R = rank(L);
-  $("#stats").innerHTML =
-    `<div class="stat"><b data-n="${L.length}">${rp(L.length)}</b><span>setoran</span></div><div class="stat"><b data-n="${R.length}">${rp(R.length)}</b><span>warga aktif</span></div><div class="stat"><b>${R[0] ? esc(R[0].nama.split(" ")[0]) : "-"}</b><span>kandidat pemenang</span></div>`;
-  if (!R.length) {
-    $("#dash").innerHTML =
-      '<div class="empty"><h3>Belum ada setoran di sini</h3><p>Jadi yang pertama naik ke puncak tier list.</p><button class="pri" id="e1">Setor sampah</button></div>';
-    $("#e1").onclick = () => go("setor");
-    return;
-  }
-  const mx = R[0].n,
-    top = R.slice(0, 3),
-    ord = [1, 0, 2].filter((i) => top[i]);
-  $("#dash").innerHTML =
-    '<div class="pod">' +
-    ord
-      .map((i) => {
-        const p = top[i];
-        return `<div class="pi r${i}${i === 0 ? " f" : ""}"><div class="nm">${esc(p.nama)}</div><div class="ct">${p.n} kali setor</div>${i === 0 ? '<div class="tp"><svg viewBox="0 0 40 34" width="40" height="34" aria-hidden="true"><path d="M20 34V14" style="stroke:var(--b);stroke-width:3;fill:none"/><path d="M20 18C8 18 6 8 8 3c10 0 14 6 12 15Z" style="fill:var(--y);stroke:var(--ink);stroke-width:1.5"/><path d="M20 14C30 14 34 8 33 2c-9 0-14 4-13 12Z" style="fill:var(--b);stroke:var(--ink);stroke-width:1.5"/></svg></div>' : ""}<div class="blk" data-h="${50 + Math.round((p.n / mx) * 130)}">${i + 1}</div></div>`;
-      })
-      .join("") +
-    "</div>" +
-    R.slice(3)
-      .map((p, i) => {
-        const t = tier(p.n);
-        return `<div class="rw"><div class="no">${i + 4}</div><div><b>${esc(p.nama)}</b></div><div class="bar"><i class="${t[1]}" data-w="${Math.round((p.n / mx) * 100)}"></i></div><div><span class="tg ${t[1]}">${t[0]} · ${p.n}</span></div></div>`;
-      })
-      .join("");
-  document.querySelectorAll(".pi").forEach(
-    (p) =>
-      (p.onclick = (e) => {
-        p.classList.remove("bn");
-        void p.offsetWidth;
-        p.classList.add("bn");
-        burst(e.clientX, e.clientY, 8);
-      }),
+function monitor() {
+  const salah = rows.filter((r) => r.salah).length,
+    pct = rows.length
+      ? Math.round(((rows.length - salah) / rows.length) * 100) + "%"
+      : "-";
+  setHTML(
+    "#astats",
+    `<div class="stat"><b data-n="${rows.length}">${rp(rows.length)}</b><span>total kejadian</span></div><div class="stat"><b data-n="${salah}">${rp(salah)}</b><span>salah buang</span></div><div class="stat"><b>${pct}</b><span>dibuang dengan benar</span></div>`,
   );
-  requestAnimationFrame(() =>
-    requestAnimationFrame(() => {
-      document
-        .querySelectorAll(".blk")
-        .forEach((e) => (e.style.height = e.dataset.h + "px"));
-      document
-        .querySelectorAll(".bar i")
-        .forEach((e) => (e.style.width = e.dataset.w + "%"));
-    }),
-  );
-}
 
-function lcs() {
-  $("#lc").innerHTML = LOCS.map(
-    (l) =>
-      `<button type="button" class="loc ${l === pick ? "on" : ""}" data-l="${l}"><b>${l}</b></button>`,
-  ).join("");
-  $("#lc")
-    .querySelectorAll("button")
-    .forEach(
-      (b) =>
-        (b.onclick = () => {
-          pick = b.dataset.l;
-          lcs();
-        }),
-    );
-}
-$("#foto").onchange = (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-  foto = "";
-  $("#submitSetoran").disabled = true;
-  $("#prev").hidden = true;
-  $("#dz").classList.remove("has");
-  const im = new Image(),
-    u = URL.createObjectURL(f);
-  im.onload = () => {
-    const s = Math.min(1, 480 / Math.max(im.width, im.height)),
-      c = document.createElement("canvas");
-    c.width = Math.round(im.width * s);
-    c.height = Math.round(im.height * s);
-    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
-    foto = c.toDataURL("image/jpeg", 0.6);
-    URL.revokeObjectURL(u);
-    $("#prev").src = foto;
-    $("#prev").hidden = false;
-    $("#dz").classList.add("has");
-    $("#dzt").textContent = "Ganti foto";
-    $("#fe").textContent = "";
-    $("#submitSetoran").disabled = false;
-  };
-  im.onerror = () => {
-    $("#fe").textContent = "File itu bukan gambar. Pilih foto lain.";
-  };
-  im.src = u;
-};
-$("#fm").onsubmit = async (e) => {
-  e.preventDefault();
-  const n = $("#nm").value.trim(),
-    h = $("#hp").value.replace(/\D/g, ""),
-    f = $("#fe");
-  if (n.length < 2) return (f.textContent = "Isi nama kamu.");
-  if (h.length < 9 || h.length > 14)
-    return (f.textContent = "No HP harus 9 sampai 14 angka.");
-  if (!pick) return (f.textContent = "Pilih tempat pembuangan.");
-  if (!foto) return (f.textContent = "Unggah foto bukti dulu.");
-  f.textContent = "";
-  try {
-    await save({
-      id: uid(),
-      nama: n,
-      hp: h,
-      lokasi: pick,
-      foto,
-      t: Date.now(),
+  // ringkasan per tong
+  const G = {};
+  rows.forEach((r) => {
+    const g = (G[r.tong_id] = G[r.tong_id] || {
+      kat: r.kategori_tong,
+      n: 0,
+      s: 0,
     });
-   } catch (x) {
-    console.error(x);
-    return (f.textContent = "Gagal menyimpan: " + (x.message || x));
-  }
-  $("#fm").reset();
-  foto = "";
-  pick = "";
-  $("#submitSetoran").disabled = true;
-  $("#prev").hidden = true;
-  $("#dz").classList.remove("has");
-  $("#dzt").textContent = "Ketuk untuk pilih atau ambil foto";
-  toast("Setoran tercatat");
-  burst(innerWidth / 2, innerHeight / 2, 18);
-  filt = "Semua";
-  go("dashboard");
-};
-
-function admin() {
-  const R = rank(rows);
-  $("#astats").innerHTML =
-    `<div class="stat"><b data-n="${rows.length}">${rp(rows.length)}</b><span>total setoran</span></div><div class="stat"><b data-n="${R.length}">${rp(R.length)}</b><span>warga aktif</span></div><div class="stat"><b>${R[0] ? esc(R[0].nama.split(" ")[0]) : "-"}</b><span>kandidat pemenang</span></div>`;
-  const c = LOCS.map((l) => rows.filter((r) => r.lokasi === l).length),
-    mx = Math.max(1, ...c);
-  $("#alocs").innerHTML = LOCS.map(
-    (l, i) =>
-      `<div class="rw" style="grid-template-columns:150px 1fr 40px"><b>${l}</b><div class="bar"><i class="${i ? "dk" : "ag"}" data-w="${Math.round((c[i] / mx) * 100)}"></i></div><div>${c[i]}</div></div>`,
-  ).join("");
-  $("#tb").innerHTML = rows.length
-    ? rows
-        .map(
-          (r) =>
-            `<tr><td>${new Date(r.t).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</td><td>${esc(r.nama)}</td><td>${esc(r.hp)}</td><td><span class="pill ${r.lokasi === NEW_LOC ? "dk" : "ag"}">${esc(r.lokasi)}</span></td><td>${r.foto ? `<img src="${r.foto}" alt="Bukti ${esc(r.nama)}" data-s="${r.id}">` : "-"}</td><td><button data-d="${r.id}" aria-label="Hapus">Hapus</button></td></tr>`,
-        )
-        .join("")
-    : '<tr><td colspan="6" class="empty">Belum ada data. Klik Isi data contoh untuk mencoba.</td></tr>';
-  $("#tb")
-    .querySelectorAll("[data-d]")
-    .forEach(
-      (b) =>
-        (b.onclick = () => {
-          if (b.dataset.c) {
-            del(b.dataset.d);
-          } else {
-            b.dataset.c = 1;
-            b.textContent = "Yakin?";
-            setTimeout(() => {
-              b.dataset.c = "";
-              b.textContent = "Hapus";
-            }, 2500);
-          }
-        }),
-    );
-  $("#tb")
-    .querySelectorAll("img")
-    .forEach(
-      (i) =>
-        (i.onclick = () => {
-          $("#lbi").src = i.src;
-          $("#lb").classList.add("show");
-        }),
-    );
-  requestAnimationFrame(() =>
-    requestAnimationFrame(() =>
-      document
-        .querySelectorAll("#alocs .bar i")
-        .forEach((e) => (e.style.width = e.dataset.w + "%")),
-    ),
+    g.n++;
+    if (r.salah) g.s++;
+  });
+  const T = Object.entries(G).sort(
+    (a, b) => b[1].s - a[1].s || b[1].n - a[1].n,
   );
-}
-$("#lb").onclick = () => $("#lb").classList.remove("show");
-$("#seed").onclick = async () => {
-  const N = [
-      "Budi Santoso",
-      "Sari Dewi",
-      "Rangga Putra",
-      "Maya Lestari",
-      "Dimas Pratama",
-      "Putri Ayu",
-      "Fajar Nugroho",
-      "Nadia Rahma",
-    ],
-    C = [12, 9, 7, 5, 4, 3, 2, 1];
-  for (let i = 0; i < N.length; i++)
-    for (let k = 0; k < C[i]; k++)
-      await save({
-        id: uid(),
-        nama: N[i],
-        hp: "0812000000" + i,
-        lokasi: LOCS[(i + k) % 2],
-        foto: "",
-        t: Date.now() - (i * 7 + k) * 3600000,
-      });
-  toast("Data contoh ditambahkan");
-};
-$("#csv").onclick = async () => {
-  const q = (v) => '"' + String(v).replace(/"/g, '""') + '"',
-    d = window.claude ? await claude.use("downloads") : null,
-    data =
-      "waktu,nama,hp,lokasi\n" +
-      rows
-        .map((r) =>
-          [new Date(r.t).toISOString(), r.nama, r.hp, r.lokasi]
-            .map(q)
-            .join(","),
-        )
-        .join("\n");
-  if (d) d.save({ filename: "data-sampah.csv", data }).catch(() => {});
-  else toast("Unduh belum tersedia di sini");
-};
+  if (
+    setHTML(
+      "#pertong",
+      T.map(
+        ([id, g]) =>
+          `<div class="rw" style="grid-template-columns:minmax(120px,170px) 1fr auto"><b>${esc(id)}<small>tong ${esc(g.kat)}</small></b><div class="bar"><i class="bd" data-w="${Math.round((g.s / g.n) * 100)}"></i></div><div>${g.s} salah / ${g.n}</div></div>`,
+      ).join(""),
+    )
+  )
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() =>
+        document
+          .querySelectorAll("#pertong .bar i")
+          .forEach((e) => (e.style.width = e.dataset.w + "%")),
+      ),
+    );
 
-$("#goUser").onclick = () => {
-  setRole("user");
-  go("dashboard");
-};
-$("#goAdm").onclick = () => {
-  $("#adm").classList.toggle("show");
+  // filter
+  if (
+    setHTML(
+      "#chips",
+      ["Semua", "Salah buang", "Benar"]
+        .map(
+          (l) =>
+            `<button class="${l === filt ? "on" : ""}" data-l="${l}">${l}</button>`,
+        )
+        .join(""),
+    )
+  )
+    $("#chips")
+      .querySelectorAll("button")
+      .forEach(
+        (b) =>
+          (b.onclick = () => {
+            filt = b.dataset.l;
+            monitor();
+          }),
+      );
+
+  // tabel
+  const L = rows.filter((r) =>
+    filt === "Semua" ? true : filt === "Salah buang" ? r.salah : !r.salah,
+  );
+  const html = L.length
+    ? L.map(
+        (r) =>
+          `<tr class="${r.salah ? "bad" : ""}"><td>${fmt(r.waktu)}</td><td>${esc(r.tong_id)}</td><td>${esc(r.kategori_tong)}</td><td>${esc(r.kategori_terdeteksi)}</td><td><span class="pill ${r.salah ? "no" : "ok"}">${r.salah ? "Salah tong" : "Benar"}</span></td><td>${r.pembuang ? esc(r.pembuang) : "Anonim"}</td><td><button data-d="${r.id}" aria-label="Hapus">Hapus</button></td></tr>`,
+      ).join("")
+    : '<tr><td colspan="7" class="empty">Belum ada kejadian. Jalankan simulasi Wokwi untuk mengirim data sensor.</td></tr>';
+  if (setHTML("#tb", html))
+    $("#tb")
+      .querySelectorAll("[data-d]")
+      .forEach(
+        (b) =>
+          (b.onclick = () => {
+            if (b.dataset.c) {
+              del(b.dataset.d);
+            } else {
+              b.dataset.c = 1;
+              b.textContent = "Yakin?";
+              setTimeout(() => {
+                b.dataset.c = "";
+                b.textContent = "Hapus";
+              }, 2500);
+            }
+          }),
+      );
+}
+
 $("#csv").onclick = () => {
   const q = (v) => '"' + String(v).replace(/"/g, '""') + '"';
   const data =
-    "waktu,nama,hp,lokasi\n" +
+    "waktu,tong_id,kategori_tong,kategori_terdeteksi,status,pembuang\n" +
     rows
-      .map((r) => [new Date(r.t).toISOString(), r.nama, r.hp, r.lokasi].map(q).join(","))
+      .map((r) =>
+        [
+          new Date(r.waktu).toISOString(),
+          r.tong_id,
+          r.kategori_tong,
+          r.kategori_terdeteksi,
+          r.salah ? "salah" : "benar",
+          r.pembuang || "anonim",
+        ]
+          .map(q)
+          .join(","),
+      )
       .join("\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([data], { type: "text/csv" }));
-  a.download = "data-sampah.csv";
+  a.download = "data-kejadian-sensor.csv";
   a.click();
 };
+
+// ===== 4. INTERAKSI & ANIMASI (halaman depan) =====
+function burst(x, y, n) {
+  for (let i = 0; i < n; i++) {
+    const l = document.createElement("span"),
       a = Math.random() * 6.28,
       d = 40 + Math.random() * 70;
     l.className = "lf";
@@ -407,6 +279,7 @@ $("#csv").onclick = () => {
     document.body.appendChild(l);
     setTimeout(() => l.remove(), 900);
   }
+}
 document.addEventListener("pointerdown", (e) => {
   if (!(e.target instanceof Element)) return;
   const b = e.target.closest("button");
@@ -422,20 +295,11 @@ document.addEventListener("pointerdown", (e) => {
   b.appendChild(s);
   setTimeout(() => s.remove(), 600);
 });
-$("#aok").onclick = async () => {
-  const { error } = await sb.auth.signInWithPassword({
-    email: $("#au").value.trim(),
-    password: $("#ap").value,
-  });
-  if (error) return ($("#ae").textContent = "Email atau sandi salah.");
-  setRole("admin");
-  $("#ae").textContent = "";
-  go("admin");
-};
+
 const tips = [
-  "Pisahkan sampah organik dan anorganik.",
+  "Sampah organik masuk tong organik, sisanya ke non-organik.",
+  "Sensor akan berbunyi kalau sampah salah tong.",
   "Bilas botol plastik sebelum dibuang.",
-  "Satu foto bukti, satu setoran tercatat.",
   "Kardus bekas bisa didaur ulang.",
 ];
 let ti = 0;
@@ -468,7 +332,6 @@ document.querySelectorAll(".tree").forEach(
       t.classList.add("sway");
     }),
 );
-// ===== 3. INTERAKSI & ANIMASI =====
 function countUp() {
   document.querySelectorAll("[data-n]").forEach((el) => {
     const n = +el.dataset.n,
@@ -480,16 +343,14 @@ function countUp() {
     })(t0);
   });
 }
-["#stats", "#astats"].forEach((s) =>
-  new MutationObserver(countUp).observe($(s), { childList: true }),
-);
+new MutationObserver(countUp).observe($("#astats"), { childList: true });
 function sun(e) {
   const s = $("#sun");
   s.classList.remove("bn2");
   void s.getBoundingClientRect();
   s.classList.add("bn2");
   burst(e.clientX || innerWidth / 2, e.clientY || 80, 10);
-  toast("Cerah! Waktu yang pas untuk setor sampah.");
+  toast("Cerah! Waktu yang pas untuk memantau tong sampah.");
 }
 $("#sun").onclick = sun;
 $("#sun").onkeydown = (e) => {
@@ -507,5 +368,267 @@ document.querySelectorAll(".fl").forEach(
       burst(e.clientX, e.clientY, 6);
     }),
 );
-addEventListener("hashchange", render);
-init();
+
+// ===== 5. UJI COBA SETOR SAMPAH (simulasi kamera tong) =====
+// Khusus uji coba. Saat dipasang di tong asli, ESP32 + sensor/kamera mengirim data
+// langsung ke tabel "kejadian" di Supabase, dan dashboard di atas tinggal memantau.
+
+// (1) Link model Teachable Machine (Export Model > TensorFlow.js > Upload).
+//     Contoh: "https://teachablemachine.withgoogle.com/models/AbCdEf123/"
+const MODEL_URL = "https://teachablemachine.withgoogle.com/models/86qGaCsNK/";
+
+// (2) Daftar tong. "id" HARUS sama dengan TONG_ID di sketch Wokwi.
+const TONG = [
+  { id: "sampah_organik", kategori: "organik" },
+  { id: "sampah_nonorganik", kategori: "non-organik" },
+];
+const BATAS_YAKIN = 0.7; // di bawah 70% dianggap tidak yakin
+
+// (3) Jalur alarm ke Wokwi lewat broker MQTT publik.
+//     MQTT_BASE HARUS sama persis dengan MQTT_BASE di sketch Wokwi.
+//     Kalau jaringanmu memblokir broker ini, ganti ke "wss://broker.emqx.io:8084/mqtt"
+//     dan ubah MQTT_SERVER di sketch Wokwi jadi "broker.emqx.io".
+const MQTT_URL = "wss://broker.hivemq.com:8884/mqtt";
+const MQTT_BASE = "cbbu-7f3a9c21";
+const MQTT_TOPIC = MQTT_BASE + "/alarm"; // web -> Wokwi (alarm)
+// Wokwi -> web: MQTT_BASE + "/status" (online/offline) dan MQTT_BASE + "/ack" (alarm diterima)
+
+// Client terpisah: selalu bertindak sebagai "perangkat" (anon), bukan sesi admin
+const sbUji = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    storageKey: "sb-uji-perangkat",
+  },
+});
+
+let ujiTong = 0,
+  ujiHasil = null,
+  ujiModel = null,
+  mq = null;
+
+const muatScript = (src) =>
+  new Promise((ok, gagal) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = ok;
+    s.onerror = () => gagal(new Error("gagal memuat " + src));
+    document.head.appendChild(s);
+  });
+
+function ujiStatus(t, bad) {
+  const e = $("#ujiStatus");
+  e.textContent = t;
+  e.style.color = bad ? "var(--bad)" : "";
+}
+function wokwiStatus(online, info) {
+  const e = $("#ujiWokwi");
+  e.textContent = online
+    ? "Wokwi: online, siap menerima alarm." + (info ? " " + info : "")
+    : "Wokwi: offline. Jalankan simulasi di Wokwi (pakai sketch.ino terbaru).";
+  e.style.color = online ? "var(--ok)" : "var(--bad)";
+}
+function mqStatus(ok) {
+  const e = $("#ujiMq");
+  e.textContent = ok
+    ? "Jalur alarm ke Wokwi: tersambung ke broker."
+    : "Jalur alarm ke Wokwi: belum tersambung ke broker.";
+  e.style.color = ok ? "var(--ok)" : "var(--bad)";
+}
+
+// "Organik" -> organik, "Non-organik"/"Anorganik" -> non-organik, lainnya -> bukan
+// Mengenali nama kelas dalam bahasa Indonesia maupun Inggris:
+// "Organik" / "organic" -> organik; "Non-organik" / "non organic" / "Anorganik" / "inorganic" -> non-organik
+// "Bukan sampah" -> bukan; selain itu -> tidak-dikenal
+function kategoriDariLabel(label) {
+  const l = String(label).toLowerCase().replace(/[^a-z]/g, "");
+  if (l.includes("bukan") || l.includes("background")) return "bukan";
+  if (/^(non|an|in)org/.test(l)) return "non-organik";
+  if (/^org|organi[ck]/.test(l)) return "organik";
+  return "tidak-dikenal";
+}
+
+function renderUjiTong() {
+  $("#ujiTong").innerHTML = TONG.map(
+    (t, i) =>
+      `<button type="button" class="tg ${i === ujiTong ? "on" : ""}" data-i="${i}">Tong ${esc(t.kategori)}<small>${esc(t.id)}</small></button>`,
+  ).join("");
+  $("#ujiTong")
+    .querySelectorAll("button")
+    .forEach(
+      (b) =>
+        (b.onclick = () => {
+          ujiTong = +b.dataset.i;
+          renderUjiTong();
+          $("#ujiNotif").hidden = true;
+        }),
+    );
+}
+
+async function mqttSambung() {
+  if (mq) return;
+  try {
+    await muatScript("https://cdn.jsdelivr.net/npm/mqtt@5/dist/mqtt.min.js");
+    mq = mqtt.connect(MQTT_URL, {
+      clientId: "web-" + Math.random().toString(16).slice(2, 10),
+      reconnectPeriod: 3000,
+    });
+    mq.on("connect", () => {
+      mqStatus(true);
+      mq.subscribe([MQTT_BASE + "/status", MQTT_BASE + "/ack"]);
+    });
+    mq.on("message", (topic, msg) => {
+      const t = msg.toString();
+      if (topic === MQTT_BASE + "/status") wokwiStatus(t === "online");
+      else if (topic === MQTT_BASE + "/ack")
+        wokwiStatus(true, "Alarm terakhir diterima " + new Date().toLocaleTimeString("id-ID") + ".");
+    });
+    mq.on("close", () => mqStatus(false));
+    mq.on("error", (e) => console.error(e));
+  } catch (e) {
+    console.error(e);
+    mqStatus(false);
+  }
+}
+
+async function ujiSiap() {
+  renderUjiTong();
+  mqttSambung();
+  if (MODEL_URL.includes("TEMPEL")) {
+    return ujiStatus(
+      "Model AI belum dipasang. Isi MODEL_URL di app.js dengan link model Teachable Machine.",
+      true,
+    );
+  }
+  ujiStatus("Memuat model AI...");
+  try {
+    await muatScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.3.1/dist/tf.min.js");
+    await muatScript(
+      "https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js",
+    );
+    const base = MODEL_URL.endsWith("/") ? MODEL_URL : MODEL_URL + "/";
+    ujiModel = await tmImage.load(base + "model.json", base + "metadata.json");
+    ujiStatus("Model AI siap. Pilih tong, lalu foto sampahnya.");
+  } catch (e) {
+    console.error(e);
+    ujiStatus("Gagal memuat model AI. Cek MODEL_URL (harus link hasil Upload dari Teachable Machine).", true);
+  }
+}
+$("#uji").addEventListener("toggle", function sekali() {
+  if ($("#uji").open) {
+    $("#uji").removeEventListener("toggle", sekali);
+    ujiSiap();
+  }
+});
+
+$("#ujiFoto").onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  $("#ujiNotif").hidden = true;
+  const img = $("#ujiPrev");
+  img.src = URL.createObjectURL(f);
+  img.hidden = false;
+  $("#ujiDz").classList.add("has");
+  try {
+    await img.decode();
+  } catch (_) {}
+  if (!ujiModel) {
+    ujiHasil = null;
+    $("#ujiKirim").disabled = true;
+    return ujiStatus("Model AI belum siap. Tunggu sebentar, atau cek MODEL_URL di app.js.", true);
+  }
+  ujiStatus("Mengklasifikasi...");
+  const preds = (await ujiModel.predict(img)).sort((a, b) => b.probability - a.probability);
+  const top = preds[0];
+  ujiHasil = { kategori: kategoriDariLabel(top.className), prob: top.probability };
+  const pct = Math.round(top.probability * 100);
+  const sampah = ujiHasil.kategori === "organik" || ujiHasil.kategori === "non-organik";
+  const valid = sampah && ujiHasil.prob >= BATAS_YAKIN;
+  const pesanGagal =
+    ujiHasil.kategori === "tidak-dikenal"
+      ? `Label model "${top.className}" tidak dikenali. Ganti nama kelas di Teachable Machine jadi Organik / Non-organik.`
+      : ujiHasil.kategori === "bukan"
+        ? `Terdeteksi bukan sampah (${pct}%). Coba foto ulang.`
+        : `Tidak yakin (${pct}%, minimal ${Math.round(BATAS_YAKIN * 100)}%). Coba foto ulang dengan pencahayaan lebih jelas.`;
+  $("#ujiHasil").innerHTML =
+    `<div class="uji-judul">${
+      valid ? "Terdeteksi: " + esc(ujiHasil.kategori.toUpperCase()) + " (" + pct + "%)" : esc(pesanGagal)
+    }</div>` +
+    preds
+      .map(
+        (p) =>
+          `<div class="uji-bar"><span>${esc(p.className)}</span><div><i style="width:${Math.round(p.probability * 100)}%"></i></div><span>${Math.round(p.probability * 100)}%</span></div>`,
+      )
+      .join("");
+  $("#ujiHasil").hidden = false;
+  if (!valid) ujiHasil = null;
+  $("#ujiKirim").disabled = !valid;
+  ujiStatus("Model AI siap.");
+};
+
+function ujiAlarm(payload) {
+  return new Promise((ok, gagal) => {
+    if (!mq || !mq.connected) return gagal(new Error("broker MQTT belum tersambung"));
+    mq.publish(MQTT_TOPIC, JSON.stringify(payload), { qos: 0 }, (err) => (err ? gagal(err) : ok()));
+  });
+}
+
+$("#ujiKirim").onclick = async () => {
+  if (!ujiHasil) return;
+  const n = $("#ujiNotif"),
+    tampil = (cls, teks) => {
+      n.className = "uji-notif " + cls;
+      n.textContent = teks;
+      n.hidden = false;
+    },
+    idp = $("#ujiId").value.trim();
+  if (idp && !/^\d{4,8}$/.test(idp))
+    return tampil("bad", "ID pembuang harus 4-8 digit angka, atau kosongkan.");
+
+  const t = TONG[ujiTong],
+    salah = ujiHasil.kategori !== t.kategori;
+  $("#ujiKirim").disabled = true;
+
+  // 1) simpan ke Supabase (sama seperti yang nanti dilakukan sensor IoT asli)
+  const { error } = await sbUji.from("kejadian").insert({
+    tong_id: t.id,
+    lokasi: LOKASI,
+    kategori_tong: t.kategori,
+    kategori_terdeteksi: ujiHasil.kategori,
+    salah,
+    pembuang: idp || null,
+  });
+  if (error) console.error(error);
+
+  // 2) kirim alarm ke Wokwi (buzzer bunyi kalau salah tong)
+  let wokwi = "alarm ke Wokwi terkirim";
+  try {
+    await ujiAlarm({ tong: t.id, kategori_tong: t.kategori, jenis: ujiHasil.kategori, salah });
+  } catch (e) {
+    wokwi = "alarm ke Wokwi GAGAL (" + e.message + ")";
+  }
+
+  const hasil = salah
+    ? `SALAH TONG: sampah ${ujiHasil.kategori} masuk tong ${t.kategori}.`
+    : `Benar: sampah ${ujiHasil.kategori} masuk tong ${t.kategori}.`;
+  tampil(
+    error || wokwi.includes("GAGAL") ? "bad" : salah ? "bad" : "ok",
+    `${hasil} ${error ? "Gagal menyimpan ke Supabase: " + error.message + "." : "Tersimpan ke Supabase."} ${wokwi[0].toUpperCase() + wokwi.slice(1)}.`,
+  );
+
+  // siap untuk uji berikutnya
+  ujiHasil = null;
+  $("#ujiPrev").hidden = true;
+  $("#ujiHasil").hidden = true;
+  $("#ujiDz").classList.remove("has");
+  $("#ujiFoto").value = "";
+  await muat();
+};
+
+// ===== 6. MULAI =====
+(async function init() {
+  const { data } = await sb.auth.getSession(); // pulihkan sesi admin setelah refresh
+  setSesi(data.session);
+  render();
+})();
