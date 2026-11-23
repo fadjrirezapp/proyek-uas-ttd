@@ -37,21 +37,31 @@
       <section id="v-beranda" class="sec">
         <div class="hero">
           <div>
-            <h1>Buang sampah, <mark>dapat hadiah.</mark></h1>
+            <h1>Pantau tong sampah, <mark>langsung dari sensor.</mark></h1>
             <p>
-              Setor sampah di Perumahan Arga atau Kampus Fakultas Teknik Untirta, dan dapatkan hadiah menarik!
+              Dashboard admin untuk memantau sampah yang dibuang di Kampus Fakultas Teknik Untirta, lengkap dengan deteksi salah tong organik dan non-organik.
             </p>
           </div>
-          <div class="doors">
-            <button class="door y" id="goUser">
-              <h3>Masuk sebagai umum</h3>
-              <span>Tanpa username dan sandi. Langsung ke dashboard.</span>
-            </button>
-            <button class="door" id="goAdm">
-              <h3>Masuk sebagai admin</h3>
-              <span>Kelola dan analisis data setoran.</span>
-            </button>
-          </div>
+          <form class="login" id="fl" novalidate>
+            <h3>Masuk sebagai admin</h3>
+            <span>Pantau data sensor tong sampah secara real-time.</span>
+            <input
+              type="text"
+              id="au"
+              inputmode="email"
+              placeholder="Email admin"
+              autocomplete="username"
+              autocapitalize="off"
+            />
+            <input
+              type="password"
+              id="ap"
+              placeholder="Sandi"
+              autocomplete="current-password"
+            />
+            <div class="err" id="ae"></div>
+            <button class="pri" id="aok" type="submit">Masuk</button>
+          </form>
         </div>
         <div class="scene">
           <svg
@@ -232,92 +242,65 @@
             </g>
           </svg>
         </div>
-        <div id="adm">
-          <div class="lbl">Login admin</div>
-          <input
-            type="text"
-            id="au"
-            placeholder="Username"
-            autocomplete="off"
-          /><input type="password" id="ap" placeholder="Sandi" />
-          <div class="err" id="ae"></div>
-          <button class="pri" id="aok">Masuk</button>
-        </div>
-      </section>
-
-      <section id="v-dashboard" class="sec">
-        <h2 class="page-title">Tier list penyetor sampah</h2>
-        <div class="chips" id="chips"></div>
-        <div class="prize">
-          Peringkat 1 akan mendapatkan hadiah berupa saldo DANA. Peringkat dihitung dari jumlah
-          setoran yang tercatat.
-        </div>
-        <div class="stats" id="stats"></div>
-        <div id="dash"></div>
-      </section>
-
-      <section id="v-setor" class="sec form-sec">
-        <h2 class="page-title">Setor sampah</h2>
-        <form id="fm" novalidate>
-          <label for="nm">Nama</label
-          ><input
-            type="text"
-            id="nm"
-            maxlength="40"
-            placeholder="Budi Santoso"
-            autocomplete="name"
-          />
-          <label for="hp">No HP</label
-          ><input
-            type="tel"
-            id="hp"
-            maxlength="16"
-            placeholder="081234567890"
-            inputmode="numeric"
-          />
-          <div class="lbl">Tempat pembuangan</div>
-          <div class="locs" id="lc"></div>
-          <div class="lbl">Foto bukti (wajib)</div>
-          <label class="dz" id="dz" style="margin: 0"
-            ><input type="file" id="foto" accept="image/*" /><span id="dzt"
-              >Ketuk untuk pilih atau ambil foto
-              <br />
-              (Pastikan ketika pengambilan foto tong sampah dan juga barcode
-              terlihat jelas)</span
-            ><img id="prev" hidden alt="Pratinjau foto bukti"
-          /></label>
-          <div class="err" id="fe"></div>
-          <button
-            class="pri"
-            id="submitSetoran"
-            type="submit"
-            style="width: 100%; padding: 14px"
-            disabled
-          >
-            Kirim setoran
-          </button>
-        </form>
       </section>
 
       <section id="v-admin" class="sec">
-        <h2 class="page-title">Panel admin</h2>
+        <h2 class="page-title">Monitoring tong sampah Kampus Untirta</h2>
+        <p class="live"><span class="dot"></span><span id="upd">Menunggu data...</span></p>
+                <details class="uji" id="uji">
+          <summary>Uji coba: setor sampah (simulasi kamera tong)</summary>
+          <div class="uji-body">
+            <p class="mut">
+              Khusus uji coba. Saat dipasang di tong asli, sensor IoT yang mengirim data langsung
+              ke Supabase, dan halaman ini cukup dipakai untuk memantau.
+            </p>
+            <p class="mut" id="ujiStatus">Membuka...</p>
+            <p class="mut" id="ujiMq">Jalur alarm ke Wokwi: menyambung...</p>
+            <p class="mut" id="ujiWokwi">Wokwi: belum terdeteksi. Jalankan simulasi di Wokwi.</p>
+
+            <div class="lbl">1. Sampah dibuang ke tong mana?</div>
+            <div class="tongs" id="ujiTong"></div>
+
+            <div class="lbl">2. Foto sampah</div>
+            <label class="dz" id="ujiDz"
+              ><input type="file" id="ujiFoto" accept="image/*" /><span
+                >Ketuk untuk ambil atau pilih foto sampah</span
+              ><img id="ujiPrev" hidden alt="Foto sampah"
+            /></label>
+            <div class="uji-hasil" id="ujiHasil" hidden></div>
+
+            <label class="lbl" for="ujiId">ID pembuang (opsional, 4-8 digit)</label>
+            <input
+              type="text"
+              id="ujiId"
+              inputmode="numeric"
+              maxlength="8"
+              placeholder="kosongkan = anonim"
+              autocomplete="off"
+            />
+            <button class="pri" id="ujiKirim" type="button" style="width: 100%; padding: 14px; margin-top: 12px" disabled>
+              Buang ke tong ini
+            </button>
+            <div class="uji-notif" id="ujiNotif" hidden></div>
+          </div>
+        </details>
         <div class="stats" id="astats"></div>
-        <div id="alocs" style="margin-bottom: 20px"></div>
-        <div
-          style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px"
-        >
-          <button id="seed">Isi data contoh</button
-          ><button id="csv">Unduh CSV</button>
+        <h3 class="sub">Salah buang per tong</h3>
+        <div id="pertong" style="margin-bottom: 20px"></div>
+        <div class="chips" id="chips"></div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px">
+          <button id="csv">Unduh CSV</button>
         </div>
         <div class="tw">
           <table>
             <thead>
               <tr>
                 <th>Waktu</th>
-                <th>Nama</th>
-                <th>No HP</th>
-                <th>Lokasi</th>
-                <th>Foto</th>
+                <th>Tong</th>
+                <th>Kategori tong</th>
+                <th>Terdeteksi</th>
+                <th>Status</th>
+                <th>Pembuang</th>
                 <th></th>
               </tr>
             </thead>
@@ -326,7 +309,6 @@
         </div>
       </section>
     </div>
-    <div class="lb" id="lb"><img id="lbi" alt="Foto bukti" /></div>
     <div id="toast"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
