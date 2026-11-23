@@ -998,3 +998,188 @@ input:focus {
     transform: translate(70px, 110vh) rotate(540deg);
   }
 }
+
+/* ===== Monitoring sensor IoT (admin saja) ===== */
+.login {
+  border: 2px solid var(--ink);
+  border-radius: 16px;
+  background: var(--card);
+  padding: 20px;
+}
+.login h3 {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+.login > span {
+  display: block;
+  font-size: 14px;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+.login input {
+  margin: 6px 0;
+}
+.login .pri {
+  width: 100%;
+  margin-top: 6px;
+  padding: 12px;
+}
+.sub {
+  font-size: 18px;
+  margin: 8px 0;
+}
+.live {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--mut);
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--b);
+  animation: pulse 1.6s infinite;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+}
+.bar i.bd {
+  background: var(--bad);
+}
+.rw small {
+  display: block;
+  color: var(--mut);
+  font-weight: 400;
+  font-size: 12px;
+}
+.pill.ok {
+  background: var(--y);
+  color: #101b3d;
+}
+.pill.no {
+  background: var(--bad);
+  color: var(--bg);
+}
+tr.bad td {
+  background: color-mix(in srgb, var(--bad) 10%, transparent);
+}
+
+/* ===== Uji coba setor sampah ===== */
+.uji {
+  border: 2px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  margin: 0 0 20px;
+}
+.uji summary {
+  cursor: pointer;
+  padding: 14px 16px;
+  font-weight: 600;
+  list-style: none;
+}
+.uji summary::-webkit-details-marker {
+  display: none;
+}
+.uji summary::before {
+  content: "\25B8  ";
+}
+.uji[open] summary::before {
+  content: "\25BE  ";
+}
+.uji-body {
+  padding: 0 16px 16px;
+}
+.uji-body .mut {
+  color: var(--mut);
+  font-size: 14px;
+  margin: 0 0 8px;
+}
+.uji [hidden] {
+  display: none !important;
+}
+.tongs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.tg {
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+}
+.tg small {
+  display: block;
+  font-weight: 400;
+  color: var(--mut);
+  margin-top: 2px;
+}
+.tg.on {
+  background: var(--y);
+  color: #101b3d;
+}
+.tg.on small {
+  color: inherit;
+  opacity: 0.8;
+}
+.uji-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.uji-hasil {
+  margin-top: 12px;
+}
+.uji-judul {
+  font-weight: 700;
+  font-size: 17px;
+  margin-bottom: 8px;
+}
+.uji-bar {
+  display: grid;
+  grid-template-columns: 110px 1fr 44px;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+  margin: 4px 0;
+}
+.uji-bar div {
+  background: var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.uji-bar i {
+  display: block;
+  height: 10px;
+  background: var(--b);
+}
+.uji-notif {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.uji-notif.ok {
+  background: color-mix(in srgb, var(--ok) 18%, transparent);
+  color: var(--ok);
+}
+.uji-notif.bad {
+  background: color-mix(in srgb, var(--bad) 18%, transparent);
+  color: var(--bad);
+}
+@media (max-width: 520px) {
+  .tongs {
+    grid-template-columns: 1fr;
+  }
+}
